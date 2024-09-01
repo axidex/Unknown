@@ -1,0 +1,8 @@
+services:
+  api:
+    build: "."
+    ports:
+      - "8000:5000"
+    volumes:
+      - ./config/config.yaml:/app/config.yaml
+      - /app/tmp
