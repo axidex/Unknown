@@ -2,3 +2,6 @@ tmp
 secrets
 
 .idea
+.env
+
+postgres_data

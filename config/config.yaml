@@ -4,3 +4,8 @@ server:
 logger:
   level: info
   filePath: ./tmp/unknown.log
+
+postgres:
+  url: localhost
+  port: 5432
+  schema: unknown

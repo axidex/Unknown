@@ -5,8 +5,9 @@ import (
 )
 
 type Config struct {
-	Server Server `yaml:"server"`
-	Logger Logger `yaml:"logger"`
+	Server   Server   `yaml:"server"`
+	Logger   Logger   `yaml:"logger"`
+	Postgres Postgres `yaml:"postgres"`
 }
 
 type Server struct {
@@ -16,6 +17,15 @@ type Server struct {
 type Logger struct {
 	Level    string `yaml:"level"`
 	FilePath string `yaml:"filePath"`
+}
+
+type Postgres struct {
+	Url      string `yaml:"url"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Pass     string `yaml:"pass"`
+	Database string `yaml:"database"`
+	Schema   string `yaml:"schema"`
 }
 
 func ReadConfig() (*Config, error) {
