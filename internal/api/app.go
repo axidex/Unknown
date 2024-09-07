@@ -1,8 +1,8 @@
 package api
 
 import (
-	"Unknown/config"
-	"Unknown/pkg/logger"
+	"github.com/axidex/Unknown/config"
+	"github.com/axidex/Unknown/pkg/logger"
 	ginzerolog "github.com/dn365/gin-zerolog"
 	"github.com/gin-gonic/gin"
 )

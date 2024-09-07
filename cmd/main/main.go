@@ -1,12 +1,12 @@
 package main
 
 import (
-	"Unknown/config"
-	"Unknown/internal/api"
-	"Unknown/internal/repository"
-	"Unknown/pkg/db/tables"
-	"Unknown/pkg/logger"
 	"fmt"
+	"github.com/axidex/Unknown/config"
+	"github.com/axidex/Unknown/internal/api"
+	"github.com/axidex/Unknown/internal/repository"
+	"github.com/axidex/Unknown/pkg/db/tables"
+	"github.com/axidex/Unknown/pkg/logger"
 	"github.com/joho/godotenv"
 	"os"
 	"strconv"
@@ -20,7 +20,7 @@ func main() {
 	}
 	fmt.Printf("Config: %+v\n", appConfig)
 
-	appLogger, err := logger.CreateNewZeroLogger(appConfig.Logger)
+	appLogger, err := logger.CreateNewZapLogger(appConfig.Logger)
 	if err != nil {
 		fmt.Printf("Got error when initializing logger - %s", err)
 		return

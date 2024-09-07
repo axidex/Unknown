@@ -1,11 +1,9 @@
 package repository
 
 import (
-	"Unknown/config"
-	"Unknown/pkg/db"
-	"Unknown/pkg/db/tables"
 	"errors"
 	"fmt"
+	"github.com/axidex/Unknown/pkg/db"
 	"gorm.io/gorm"
 )
 
@@ -18,7 +16,7 @@ type UnknownRepository struct {
 	db *gorm.DB
 }
 
-func CreateNewRepository(config config.Postgres) (Repository, error) {
+func CreateNewRepository(config db.Postgres) (Repository, error) {
 	dbConnection, err := db.CreatePostgresConnection(fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable", config.Url, config.User, config.Pass, config.Database, config.Port))
 	if err != nil {
 		return nil, err
@@ -33,7 +31,7 @@ func (r *UnknownRepository) Migrate(models ...interface{}) error {
 	if models == nil {
 		return errors.New("nothing to migrate")
 	}
-	err := r.db.Migrator().AutoMigrate(&tables.Client{}, &tables.Task{})
+	err := r.db.Migrator().AutoMigrate(models...)
 	if err != nil {
 		return err
 	}

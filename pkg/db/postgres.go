@@ -12,3 +12,12 @@ func CreatePostgresConnection(connectionString string) (*gorm.DB, error) {
 	}
 	return db, nil
 }
+
+type Postgres struct {
+	Url      string `yaml:"url"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Pass     string `yaml:"pass"`
+	Database string `yaml:"database"`
+	Schema   string `yaml:"schema"`
+}
