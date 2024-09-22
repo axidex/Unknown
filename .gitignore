@@ -5,3 +5,7 @@ secrets
 .env
 
 postgres_data
+
+gitleaks
+
+docs

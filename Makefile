@@ -19,3 +19,6 @@ stop:
 re:
 	docker compose down
 	docker compose up -d --build
+
+swag:
+	swag init -g cmd/main/main.go

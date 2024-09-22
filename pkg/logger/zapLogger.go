@@ -1,87 +1,124 @@
 package logger
 
 import (
+	"errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"os"
+	"syscall"
+	"time"
 )
 
+// ZapLogger Logger
 type ZapLogger struct {
-	sugar  *zap.SugaredLogger
-	logger *zap.Logger
+	sugarLogger *zap.SugaredLogger
+	RawLogger   *zap.Logger
+	cfg         ConfigLogger
 }
 
-func CreateNewZapLogger(loggerConfig ConfigLogger) (Logger, error) {
-	level, err := zapcore.ParseLevel(loggerConfig.Level)
+func CreateNewZapLogger(config ConfigLogger) (Logger, error) {
+	// file
+	file, err := os.OpenFile(config.FilePath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
+	logger := &ZapLogger{cfg: config}
+	logger.InitLogger(file)
 
-	atomicLevel := zap.NewAtomicLevelAt(level)
+	return logger, nil
+}
 
-	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "timestamp",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "message",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.CapitalLevelEncoder,    // Capitalize the log level names
-		EncodeTime:     zapcore.RFC3339TimeEncoder,     // RFC3339 UTC timestamp format
-		EncodeDuration: zapcore.SecondsDurationEncoder, // Duration in seconds
-		EncodeCaller:   zapcore.ShortCallerEncoder,     // Short caller (file and line)
+// For mapping config logger to app logger levels
+var loggerLevelMap = map[string]zapcore.Level{
+	"debug":  zapcore.DebugLevel,
+	"info":   zapcore.InfoLevel,
+	"warn":   zapcore.WarnLevel,
+	"error":  zapcore.ErrorLevel,
+	"dpanic": zapcore.DPanicLevel,
+	"panic":  zapcore.PanicLevel,
+	"fatal":  zapcore.FatalLevel,
+}
+
+func (l *ZapLogger) getLoggerLevel() zapcore.Level {
+	level, exist := loggerLevelMap[l.cfg.Level]
+	if !exist {
+		return zapcore.DebugLevel
 	}
 
-	zapConfig := zap.Config{
-		Level:            atomicLevel,
-		Development:      false,
-		Encoding:         "console",
-		EncoderConfig:    encoderConfig,
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stderr"},
+	return level
+}
+
+// CustomTimeEncoder Custom time encoder
+func CustomTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(t.UTC().Format("2006-01-02T15:04:05.000-07:00"))
+}
+
+// CustomLevelEncoder Custom level encoder with uppercase
+func CustomLevelEncoder(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(l.CapitalString())
+}
+
+// InitLogger Init logger
+func (l *ZapLogger) InitLogger(f *os.File) {
+	logLevel := l.getLoggerLevel()
+
+	var encoderCfg zapcore.EncoderConfig
+
+	encoderCfg = zap.NewProductionEncoderConfig()
+
+	var encoder zapcore.Encoder
+	encoderCfg.LevelKey = "level"
+	encoderCfg.CallerKey = "caller"
+	encoderCfg.TimeKey = "time"
+	encoderCfg.NameKey = "name"
+	encoderCfg.MessageKey = "message"
+	encoderCfg.EncodeTime = CustomTimeEncoder
+	encoderCfg.EncodeLevel = CustomLevelEncoder
+
+	encoder = zapcore.NewConsoleEncoder(encoderCfg)
+	fileEncoder := zapcore.NewJSONEncoder(encoderCfg)
+
+	core := zapcore.NewTee(
+		zapcore.NewCore(fileEncoder, zapcore.AddSync(f), zap.NewAtomicLevelAt(logLevel)),
+		zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), zap.NewAtomicLevelAt(logLevel)),
+	)
+
+	l.RawLogger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+
+	l.sugarLogger = l.RawLogger.Sugar()
+	err := l.sugarLogger.Sync()
+	if err != nil && !errors.Is(err, syscall.ENOTTY) {
+		l.sugarLogger.Error(err)
 	}
-
-	logger, err := zapConfig.Build()
-	if err != nil {
-		return nil, err
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
-
-	return &ZapLogger{
-		sugar:  sugar,
-		logger: logger,
-	}, nil
 }
 
-func (l *ZapLogger) Info(keyAndValues ...interface{}) {
-	l.sugar.Info(keyAndValues...)
+// Logger methods
+
+func (l *ZapLogger) Info(keysAndValues ...interface{}) {
+	l.sugarLogger.Info(keysAndValues...)
 }
 
-func (l *ZapLogger) Warn(keyAndValues ...interface{}) {
-	l.sugar.Warn(keyAndValues...)
+func (l *ZapLogger) Warn(keysAndValues ...interface{}) {
+	l.sugarLogger.Warn(keysAndValues...)
 }
 
-func (l *ZapLogger) Error(keyAndValues ...interface{}) {
-	l.sugar.Error(keyAndValues...)
+func (l *ZapLogger) Error(keysAndValues ...interface{}) {
+	l.sugarLogger.Error(keysAndValues...)
 }
 
-func (l *ZapLogger) Fatal(keyAndValues ...interface{}) {
-	l.sugar.Fatal(keyAndValues...)
+func (l *ZapLogger) Fatal(keysAndValues ...interface{}) {
+	l.sugarLogger.Fatal(keysAndValues...)
 }
 
 func (l *ZapLogger) Infof(msg string, args ...interface{}) {
-	l.sugar.Infof(msg, args...)
+	l.sugarLogger.Infof(msg, args...)
 }
-
 func (l *ZapLogger) Warnf(msg string, args ...interface{}) {
-	l.sugar.Warnf(msg, args...)
+	l.sugarLogger.Warnf(msg, args...)
 }
-
 func (l *ZapLogger) Errorf(msg string, args ...interface{}) {
-	l.sugar.Errorf(msg, args...)
+	l.sugarLogger.Errorf(msg, args...)
 }
-
 func (l *ZapLogger) Fatalf(msg string, args ...interface{}) {
-	l.sugar.Fatalf(msg, args...)
+	l.sugarLogger.Fatalf(msg, args...)
 }

@@ -1,6 +1,9 @@
 server:
   port: 5000
 
+  deadlines:
+    ss: 60
+
 logger:
   level: info
   filePath: ./tmp/unknown.log
@@ -9,3 +12,34 @@ postgres:
   url: localhost
   port: 5432
   schema: unknown
+
+workdir: ./tmp
+
+instruments:
+  gitLeaks:
+    binary: "gitleaks/gitleaks"
+    additionalCommands:
+      - -f
+      - json
+      - --exit-code
+      - '0'
+      - --no-git
+    timeout: 60
+
+
+archive:
+  maxSize: 200
+  extensions:
+      zip:
+        - ".zip"
+      tar:
+        - ".tar"
+        - ".tgz"
+        - ".tbz"
+        - ".txz"
+        - ".tzst"
+        - ".gz"
+        - ".br"
+        - ".bz2"
+        - ".xz"
+        - ".zst"

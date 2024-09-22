@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"github.com/axidex/Unknown/config"
 	"github.com/axidex/Unknown/internal/api"
-	"github.com/axidex/Unknown/internal/repository"
-	"github.com/axidex/Unknown/pkg/db/tables"
+	"github.com/axidex/Unknown/internal/parser"
+	"github.com/axidex/Unknown/pkg/archive"
 	"github.com/axidex/Unknown/pkg/logger"
+	"github.com/axidex/Unknown/pkg/shell"
 	"github.com/joho/godotenv"
 	"os"
 	"strconv"
@@ -40,29 +41,45 @@ func main() {
 
 	// Postgres
 
-	appLogger.Infof("Postgres connection - %s:%d/%s/%s", appConfig.Postgres.Url, appConfig.Postgres.Port, appConfig.Postgres.Database, appConfig.Postgres.Schema)
+	//appLogger.Infof("Postgres connection - %s:%d/%s/%s", appConfig.Postgres.Url, appConfig.Postgres.Port, appConfig.Postgres.Database, appConfig.Postgres.Schema)
+	//
+	//appRepository, err := repository.CreateNewRepository(appConfig.Postgres)
+	//if err != nil {
+	//	appLogger.Fatalf("Got error when initializing repository - %s", err)
+	//	return
+	//}
+	//appLogger.Info("Creating Schema")
+	//err = appRepository.CreateSchema(appConfig.Postgres.Schema)
+	//if err != nil {
+	//	appLogger.Fatalf("Got error when initializing db schema - %s", err)
+	//	return
+	//}
+	//appLogger.Info("Running migrations")
+	//err = appRepository.Migrate(tables.Client{}, tables.Task{})
+	//if err != nil {
+	//	appLogger.Fatalf("Got error while performing db migrations - %s", err)
+	//	return
+	//}
+	//appLogger.Info("Database ready")
 
-	appRepository, err := repository.CreateNewRepository(appConfig.Postgres)
-	if err != nil {
-		appLogger.Fatalf("Got error when initializing repository - %s", err)
-		return
+	// Archive Managers
+	archiveManagers := map[string]archive.Manager{
+		"zip": archive.CreateZipManager(appConfig.Archive.MaxSize),
+		"tar": archive.CreateTarManager(appConfig.Archive.MaxSize),
 	}
-	appLogger.Info("Creating Schema")
-	err = appRepository.CreateSchema(appConfig.Postgres.Schema)
-	if err != nil {
-		appLogger.Fatalf("Got error when initializing db schema - %s", err)
-		return
+
+	// Parsers
+	parsers := map[string]parser.Parser{
+		"gitleaks": parser.NewGitLeaksParser([]string{}),
 	}
-	appLogger.Info("Running migrations")
-	err = appRepository.Migrate(tables.Client{}, tables.Task{})
-	if err != nil {
-		appLogger.Fatalf("Got error while performing db migrations - %s", err)
-		return
+
+	// Services
+	services := map[string]shell.Service{
+		"gitleaks": shell.CreateServiceCLI(appLogger, shell.CreateCLIBuilder(appConfig.Instruments.GitLeaks)),
 	}
-	appLogger.Info("Database ready")
 
 	// App
-	app := api.CreateApp(appConfig, appLogger)
+	app := api.CreateApp(appConfig, appLogger, archiveManagers, parsers, services)
 	engine := app.InitRoutes()
 	err = engine.Run(fmt.Sprintf(":%d", appConfig.Server.Port))
 	if err != nil {
