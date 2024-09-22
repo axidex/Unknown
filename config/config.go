@@ -1,21 +1,42 @@
 package config
 
 import (
+	"github.com/axidex/Unknown/pkg/db"
+	"github.com/axidex/Unknown/pkg/logger"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Server Server `yaml:"server"`
-	Logger Logger `yaml:"logger"`
+	Server      Server              `yaml:"server"`
+	Workdir     string              `yaml:"workdir"`
+	Logger      logger.ConfigLogger `yaml:"logger"`
+	Postgres    db.Postgres         `yaml:"postgres"`
+	Instruments Instruments         `yaml:"instruments"`
+	Archive     Archive             `yaml:"archive"`
+}
+
+type Archive struct {
+	MaxSize    int                 `yaml:"maxSize"`
+	Extensions map[string][]string `yaml:"extensions"`
 }
 
 type Server struct {
-	Port int `yaml:"port"`
+	Port      int       `yaml:"port"`
+	Deadlines Deadlines `yaml:"deadlines"`
 }
 
-type Logger struct {
-	Level    string `yaml:"level"`
-	FilePath string `yaml:"filePath"`
+type Deadlines struct {
+	SS int `yaml:"ss"`
+}
+
+type Instruments struct {
+	GitLeaks ShellCommand `yaml:"gitLeaks"`
+}
+
+type ShellCommand struct {
+	Binary             string   `yaml:"binary"`
+	AdditionalCommands []string `yaml:"additionalCommands"`
+	Timeout            int      `yaml:"timeout"`
 }
 
 func ReadConfig() (*Config, error) {

@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"Unknown/config"
 	"github.com/rs/zerolog"
 	"io"
 	"os"
@@ -12,7 +11,7 @@ type ZeroLogger struct {
 	logger zerolog.Logger
 }
 
-func CreateNewZeroLogger(loggerConfig config.Logger) (Logger, error) {
+func CreateNewZeroLogger(loggerConfig ConfigLogger) (Logger, error) {
 	level, err := zerolog.ParseLevel(loggerConfig.Level)
 	if err != nil {
 		return nil, err
@@ -36,20 +35,20 @@ func CreateNewZeroLogger(loggerConfig config.Logger) (Logger, error) {
 	return &ZeroLogger{logger: logger}, nil
 }
 
-func (l *ZeroLogger) Info(msg string, keyAndValues ...interface{}) {
-	l.logger.Info().Fields(keyAndValues).Msg(msg)
+func (l *ZeroLogger) Info(keyAndValues ...interface{}) {
+	l.logger.Info().Fields(keyAndValues)
 }
 
-func (l *ZeroLogger) Warn(msg string, keyAndValues ...interface{}) {
-	l.logger.Warn().Fields(keyAndValues).Msg(msg)
+func (l *ZeroLogger) Warn(keyAndValues ...interface{}) {
+	l.logger.Warn().Fields(keyAndValues)
 }
 
-func (l *ZeroLogger) Error(msg string, keyAndValues ...interface{}) {
-	l.logger.Error().Fields(keyAndValues).Msg(msg)
+func (l *ZeroLogger) Error(keyAndValues ...interface{}) {
+	l.logger.Error().Fields(keyAndValues)
 }
 
-func (l *ZeroLogger) Fatal(msg string, keyAndValues ...interface{}) {
-	l.logger.Fatal().Fields(keyAndValues).Msg(msg)
+func (l *ZeroLogger) Fatal(keyAndValues ...interface{}) {
+	l.logger.Fatal().Fields(keyAndValues)
 }
 
 func (l *ZeroLogger) Infof(msg string, args ...interface{}) {
